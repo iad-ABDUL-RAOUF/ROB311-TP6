@@ -14,11 +14,11 @@ import matplotlib.pyplot as plt
 
 
 print('Importing training data')
-directory = "/home/iad/Documents/ENSTA/3A/rob_311/TP_rob311/TP4/" # data directory on iad's computer 
+directory = "/home/iad/Documents/ENSTA/3A/rob_311/TP_rob311/TP6/" # data directory on iad's computer 
 # directory = "./" # data directory on madeleine's computer 
 # directory = "yourpath/" # prof : put your data directory here
-datafileTrain = "mnist_train.csv"
-dataFileTest = "mnist_test.csv"
+datafileTrain = "optdigits.tra"
+dataFileTest = "optdigits.tes"
 
 # choose if you want to have a nice plot or just to print the result in the terminal
 nDimPCA = 30
@@ -65,6 +65,10 @@ elapsedPCA = time() - t0PCA
 print("PCA dimension reduction time :",elapsedPCA, "s")
 print("train data shape after PCA :",train_data.shape)
 
+
+
+kmeans = KMeans(n_clusters = 10)
+kmeans.fit(train_data)
 
 '''
 # Creating and training SVM Classifier
