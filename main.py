@@ -1,9 +1,3 @@
-'''
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
-'''
-
 import numpy as np
 import csv
 from sklearn.decomposition import PCA
@@ -68,27 +62,21 @@ print("train data shape after PCA :",train_data.shape)
 
 
 kmeans = KMeans(n_clusters = 10)
-kmeans.fit(train_data)
-
-'''
-# Creating and training SVM Classifier
 print('Training classifier')
 t0TrainClassifier = time()
-clf = make_pipeline(StandardScaler(), SVC(gamma = 'auto'))
-clf.fit(train_data, train_class)
+kmeans.fit(train_data)
 elapsedTrainClassifier = time() - t0TrainClassifier
 print("classifier training time ",elapsedTrainClassifier, "s")
-
-# Use the trained classifier to classify the test dataset
 
 
 print('Using trained classifier')
 t0Prediction = time()
-test_predict = clf.predict(test_data)
+test_predict = kmeans.predict(test_data)
 elapsedPrediction = time() - t0Prediction
-print("PCA dimension reduction time :",elapsedPrediction, "s")
+print("prediction time :",elapsedPrediction, "s")
 
 print("having ", nDimPCA, " component, total time for PCA, classifier training, and class prediction :", elapsedPrediction+elapsedTrainClassifier+elapsedPCA, "s")
+
 
 # compute the confusion matrix and the accuracy
 conf_mat = confusion_matrix(test_class, test_predict)
@@ -102,20 +90,8 @@ accuracy = accuracy/test_class.size
 # display results
 print("accuracy = ", accuracy)
  
-if not plotPrettyConfMatrix:
+if plotPrettyConfMatrix:
     print("here is the confusion matrix :")
     print(conf_mat)
-else:
-    np.set_printoptions(precision=2)
-    titles_options = [("Confusion matrix, without normalization", None),
-                      ("Normalized confusion matrix", 'true')]
-    for title, normalize in titles_options:
-        disp = plot_confusion_matrix(clf, test_data, test_class,
-                                     normalize=normalize)
-        disp.ax_.set_title(title)
-        print(title)
-        print(disp.confusion_matrix)
-    
-    plt.show()
 
 print("done")
