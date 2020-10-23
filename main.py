@@ -6,6 +6,9 @@ from sklearn.metrics import confusion_matrix, plot_confusion_matrix
 from time import time
 import matplotlib.pyplot as plt
 
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
 
 print('Importing training data')
 directory = "/home/iad/Documents/ENSTA/3A/rob_311/TP_rob311/TP6/" # data directory on iad's computer 
@@ -25,11 +28,10 @@ train_class = np.empty(3823,dtype=int)
 print('Importing training data')
 file = open(directory+datafileTrain, "r")
 csvFile = csv.reader(file)
-i = -1
+i = 0
 for row in csvFile:
-    if i > -1:
-        train_class[i] = np.array(row[-1])
-        train_data[i][:] = np.array([row[:-1]])
+    train_class[i] = np.array(row[-1])
+    train_data[i][:] = np.array([row[:-1]])
     i += 1
 print('train_class.shape : ', train_class.shape)
 
@@ -39,15 +41,15 @@ test_class = np.empty(1797, dtype=int)
 
 file = open(directory+dataFileTest, "r")
 csvFile = csv.reader(file)
-i = -1
+i = 0
 for row in csvFile:
-    if i > -1:
-        test_class[i] = np.array(row[-1])
-        test_data[i][:] = np.array([row[:-1]])
+    test_class[i] = np.array(row[-1])
+    test_data[i][:] = np.array([row[:-1]])
     i += 1
 print('test_class.shape : ', test_class.shape)
 
 # Reducting the number of components using PCA
+
 
 print("Reducing dimensions of data. The number of PCA component is set to", nDimPCA)
 t0PCA = time()
@@ -61,12 +63,24 @@ print("train data shape after PCA :",train_data.shape)
 
 
 
-kmeans = KMeans(n_clusters = 10)
+kmeans = KMeans(n_clusters = 10, n_init = 1000)
+# kmeans = make_pipeline(StandardScaler(), KMeans(n_clusters = 10))
 print('Training classifier')
 t0TrainClassifier = time()
 kmeans.fit(train_data)
 elapsedTrainClassifier = time() - t0TrainClassifier
 print("classifier training time ",elapsedTrainClassifier, "s")
+
+print('associate label to cluster')
+# associting digits to clusters. The most represented digit in a cluster defines
+# the label
+t0LabelAssiation = time()
+train_predict = kmeans.labels_
+brut_conf_mat_train = confusion_matrix(train_class, train_predict)
+cluster2HumanLabel = np.argmax(brut_conf_mat_train,0)
+train_predict_human = cluster2HumanLabel[train_predict]
+elapsedLabelAssociation = time() - t0LabelAssiation
+print("classifier training time ",elapsedLabelAssociation, "s")
 
 
 print('Using trained classifier')
@@ -74,24 +88,46 @@ t0Prediction = time()
 test_predict = kmeans.predict(test_data)
 elapsedPrediction = time() - t0Prediction
 print("prediction time :",elapsedPrediction, "s")
+test_predict_human = cluster2HumanLabel[test_predict]
 
 print("having ", nDimPCA, " component, total time for PCA, classifier training, and class prediction :", elapsedPrediction+elapsedTrainClassifier+elapsedPCA, "s")
 
+##########################
+# compute the confusion matrix and the accuracy
+print("here is the brut train confusion matrix :")
+print(brut_conf_mat_train)
 
 # compute the confusion matrix and the accuracy
-conf_mat = confusion_matrix(test_class, test_predict)
-nClass = conf_mat.shape[0]
-accuracy = 0
+brut_conf_mat_test = confusion_matrix(test_class, test_predict)
+print("here is the brut test confusion matrix :")
+print(brut_conf_mat_test)
+
+#########################
+# compute the confusion matrix and the accuracy
+human_conf_mat_train = confusion_matrix(train_class, train_predict_human)
+nClass = human_conf_mat_train.shape[0]
+accuracy_train = 0
 for ii in range(nClass):
-    accuracy += conf_mat[ii][ii]
-accuracy = accuracy/test_class.size
+    accuracy_train += human_conf_mat_train[ii][ii]
+accuracy_train = accuracy_train/train_class.size
+
+# display results
+print("accuracy_train = ", accuracy_train)
+print("here is the human train confusion matrix :")
+print(human_conf_mat_train)
+
+# compute the confusion matrix and the accuracy
+human_conf_mat_test = confusion_matrix(test_class, test_predict_human)
+nClass = human_conf_mat_test.shape[0]
+accuracy_test = 0
+for ii in range(nClass):
+    accuracy_test += human_conf_mat_test[ii][ii]
+accuracy_test = accuracy_test/test_class.size
 
 
 # display results
-print("accuracy = ", accuracy)
- 
-if plotPrettyConfMatrix:
-    print("here is the confusion matrix :")
-    print(conf_mat)
+print("accuracy_test = ", accuracy_test)
+print("here is the human test confusion matrix :")
+print(human_conf_mat_test)
 
 print("done")
