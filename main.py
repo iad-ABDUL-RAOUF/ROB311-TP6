@@ -6,8 +6,7 @@ from sklearn.metrics import confusion_matrix, plot_confusion_matrix
 from time import time
 import matplotlib.pyplot as plt
 
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import scale
 
 
 print('Importing training data')
@@ -18,14 +17,18 @@ datafileTrain = "optdigits.tra"
 dataFileTest = "optdigits.tes"
 
 # choose if you want to have a nice plot or just to print the result in the terminal
-nDimPCA = 30
-plotPrettyConfMatrix = True
+doPCA = True
+doRescale = False
+nDimPCA = 10
+KMean_method = 'k-means++' # 'k-means++', 'random', 'pca_based'
+n_KMean_init = 200
+tolerence = 10**(-5)
+max_iteration = 800
 
-
+print('Importing training data')
 train_data = np.empty((3823,64),dtype=int)
 train_class = np.empty(3823,dtype=int)
 
-print('Importing training data')
 file = open(directory+datafileTrain, "r")
 csvFile = csv.reader(file)
 i = 0
@@ -48,23 +51,30 @@ for row in csvFile:
     i += 1
 print('test_class.shape : ', test_class.shape)
 
+
 # Reducting the number of components using PCA
-
-
 print("Reducing dimensions of data. The number of PCA component is set to", nDimPCA)
 t0PCA = time()
-pca = PCA(n_components=nDimPCA)
-pca.fit(train_data)
-train_data = pca.transform(train_data)
-test_data = pca.transform(test_data)
+if doPCA:
+    pca = PCA(n_components=nDimPCA)
+    pca.fit(train_data)
+    if not KMean_method == 'pca_based':
+        train_data = pca.transform(train_data)
+        test_data = pca.transform(test_data)
+    # Rescale each feature
+    if doRescale:
+        train_data = scale(train_data, axis=0)
+        test_data = scale(test_data, axis=0)
 elapsedPCA = time() - t0PCA
 print("PCA dimension reduction time :",elapsedPCA, "s")
 print("train data shape after PCA :",train_data.shape)
 
 
-
-kmeans = KMeans(n_clusters = 10, n_init = 1000)
-# kmeans = make_pipeline(StandardScaler(), KMeans(n_clusters = 10))
+if KMean_method == 'pca_based':
+    KMean_method = pca.components_
+    print('coucou')
+    
+kmeans = KMeans(n_clusters = 10,init = KMean_method, n_init = n_KMean_init, tol = tolerence, max_iter = max_iteration)
 print('Training classifier')
 t0TrainClassifier = time()
 kmeans.fit(train_data)
